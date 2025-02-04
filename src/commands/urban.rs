@@ -37,13 +37,22 @@ pub async fn run(options: &[ResolvedOption<'_>]) -> Option<CreateInteractionResp
     .ok()?;
 
     // Get first result or return None
-    let first_entry: UrbanItem = urban_response.list.into_iter().next()?;
+    let first_entry = urban_response.list.into_iter().next();
 
-    // Build response embed
-    let embed = CreateEmbed::new()
-        .title(format!("Urban Dictionary: {}", first_entry.word))
-        .field("Definition", &first_entry.definition, false)
-        .footer(CreateEmbedFooter::new("Powered by Maxine"));
+    let mut embed = CreateEmbed::new().footer(CreateEmbedFooter::new("Powered by Maxine"));
+
+    match first_entry {
+        Some(entry) => {
+            embed = embed
+                .title(format!("Urban Dictionary: {}", entry.word))
+                .field("Definition", &entry.definition, false);
+        }
+        None => {
+            embed = embed
+                .title(format!("Urban Dictionary: {}", query))
+                .field("Definition", "No definition could be found.", false)
+        }
+    }
 
     let data = CreateInteractionResponseMessage::new().embed(embed);
     Some(CreateInteractionResponse::Message(data))

@@ -27,6 +27,7 @@ impl EventHandler for Handler {
             println!("Received command interaction \"{command_name}\" from {command_caller}");
 
             let builder = match command_name {
+                "avatar" => commands::avatar::run(&command.user, &command.data.options()),
                 "cat" => commands::cat::run().await,
                 "dog"  => commands::dog::run().await,
                 "urban" => commands::urban::run(&command.data.options()).await,
@@ -67,6 +68,7 @@ impl EventHandler for Handler {
         let _ = Command::set_global_commands(
             &ctx.http,
             vec![
+                commands::avatar::register(),
                 commands::cat::register(),
                 commands::dog::register(),
                 commands::eightball::register(),
