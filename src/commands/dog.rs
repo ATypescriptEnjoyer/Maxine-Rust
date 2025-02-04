@@ -2,23 +2,21 @@ use serenity::all::{CreateEmbed, CreateEmbedFooter, CreateInteractionResponse, C
 use serenity::builder::CreateCommand;
 
 #[derive(serde::Deserialize)]
-struct Cat {
-    url: String,
+struct Dog {
+    message: String,
 }
 
 pub async fn run() -> Option<CreateInteractionResponse> {
-    let cat = reqwest::get("https://api.thecatapi.com/v1/images/search")
+    let dog = reqwest::get("https://dog.ceo/api/breeds/image/random")
         .await.ok()?
-        .json::<Vec<Cat>>()
-        .await.ok()?
-        .into_iter()
-        .next()?;
+        .json::<Dog>()
+        .await.ok()?;
 
-    let embed = CreateEmbed::new().title("Here's your cat!").image(cat.url).footer(CreateEmbedFooter::new("Powered by Maxine"));
+    let embed = CreateEmbed::new().title("Here's your dog!").image(dog.message).footer(CreateEmbedFooter::new("Powered by Maxine"));
     let data = CreateInteractionResponseMessage::new().embed(embed);
     Some(CreateInteractionResponse::Message(data))
 }
 
 pub fn register() -> CreateCommand {
-    CreateCommand::new("cat").description("Get a random cat image")
+    CreateCommand::new("dog").description("Get a random dog image")
 }

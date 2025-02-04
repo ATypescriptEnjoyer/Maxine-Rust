@@ -1,0 +1,26 @@
+{
+    "extends": [
+      "config:base"
+    ],
+    "schedule": [
+      "every weekend"
+    ],
+    "packageRules": [
+      {
+        "packagePatterns": ["*"],
+        "enabled": true,
+        "groupName": "all dependencies",
+        "schedule": ["every weekend"],
+        "automerge": true
+      },
+      {
+        "packagePatterns": ["*"],
+        "enabled": true,
+        "managers": ["dockerfile", "docker-compose"],
+        "paths": ["/"],
+        "groupName": "docker dependencies",
+        "schedule": ["every weekend"],
+        "automerge": true
+      }
+    ]
+  }

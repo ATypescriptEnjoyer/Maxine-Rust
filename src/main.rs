@@ -22,21 +22,28 @@ struct Handler;
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
-            println!("Received command interaction: {command:#?}");
+            let command_name = command.data.name.as_str();
+            let command_caller = command.user.display_name();
+            println!("Received command interaction \"{command_name}\" from {command_caller}");
 
-            let content = match command.data.name.as_str() {
-                "ping" => Some(commands::ping::run(&command.data.options())),
-                "cat" => Some(commands::cat::run(&command.data.options())),
-                "8ball" => Some(commands::eightball::run(&command.data.options())),
-
-                _ => Some("not implemented :(".to_string()),
+            let builder = match command_name {
+                "cat" => commands::cat::run().await,
+                "dog"  => commands::dog::run().await,
+                "urban" => commands::urban::run(&command.data.options()).await,
+                "8ball" => commands::eightball::run(&command_caller, &command.data.options()),
+                _ => Some(CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new().content("Command not implemented"),
+                )),
             };
 
-            if let Some(content) = content {
-                let data = CreateInteractionResponseMessage::new().content(content);
-                let builder = CreateInteractionResponse::Message(data);
-                if let Err(why) = command.create_response(&ctx.http, builder).await {
-                    println!("Cannot respond to slash command: {why}");
+            match builder {
+                Some(builder) => {
+                    if let Err(why) = command.create_response(&ctx.http, builder).await {
+                        println!("Cannot respond to slash command: {why}");
+                    }
+                }
+                None => {
+                    println!("Something went wrong, and the command returned 'None'");
                 }
             }
         }
@@ -59,7 +66,12 @@ impl EventHandler for Handler {
 
         let _ = Command::set_global_commands(
             &ctx.http,
-            vec![commands::ping::register(), commands::cat::register(), commands::eightball::register()],
+            vec![
+                commands::cat::register(),
+                commands::dog::register(),
+                commands::eightball::register(),
+                commands::urban::register(),
+            ],
         )
         .await;
     }
