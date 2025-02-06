@@ -7,7 +7,7 @@ use serenity::builder::CreateCommand;
 use rand::seq::IndexedRandom;
 
 pub fn run(caller: &str, options: &[ResolvedOption]) -> Option<CreateInteractionResponse> {
-	let question = if let Some(ResolvedOption {
+    let question = if let Some(ResolvedOption {
         value: ResolvedValue::String(question),
         ..
     }) = options.iter().find(|opt| opt.name == "question")
@@ -48,9 +48,12 @@ pub fn run(caller: &str, options: &[ResolvedOption]) -> Option<CreateInteraction
 pub fn register() -> CreateCommand {
     CreateCommand::new("8ball")
         .description("8ball answers any question!")
-        .add_option(CreateCommandOption::new(
-            serenity::all::CommandOptionType::String,
-            "question",
-            "The question to ask the 8ball.",
-        ))
+        .add_option(
+            CreateCommandOption::new(
+                serenity::all::CommandOptionType::String,
+                "question",
+                "The question to ask the 8ball.",
+            )
+            .required(true),
+        )
 }

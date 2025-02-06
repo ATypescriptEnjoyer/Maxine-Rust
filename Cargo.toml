@@ -14,3 +14,6 @@ serenity = "0.12"
 reqwest = { version = "0.12.12", features = ["json"] }
 tokio = { version = "1.21.2", features = ["full"] }
 openssl = { version = "0.10", features = ["vendored"] }
+rig-core = "0.7.0"
+
+sqlx = { version = "0.8.3", features = ["runtime-tokio-rustls", "sqlite"] }
