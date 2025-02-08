@@ -1,7 +1,8 @@
 use rig::completion::Prompt;
 use rig::providers;
 use serenity::all::{
-    CommandInteraction, Context, CreateCommandOption, CreateEmbed, CreateEmbedFooter, CreateInteractionResponseFollowup, ResolvedOption, ResolvedValue
+    CommandInteraction, Context, CreateCommandOption, CreateEmbed, CreateEmbedFooter,
+    CreateInteractionResponseFollowup, ResolvedOption, ResolvedValue,
 };
 use serenity::builder::CreateCommand;
 
@@ -17,6 +18,16 @@ pub async fn run(
     command.defer(&ctx.http).await.ok()?;
     let options: &[ResolvedOption<'_>] = &command.data.options();
 
+    let use_default_prompt = if let Some(ResolvedOption {
+        value: ResolvedValue::Boolean(use_default_prompt),
+        ..
+    }) = options.iter().find(|opt| opt.name == "use_default_prompt")
+    {
+        use_default_prompt
+    } else {
+        return false;
+    };
+
     let query = if let Some(ResolvedOption {
         value: ResolvedValue::String(query),
         ..
@@ -29,6 +40,7 @@ pub async fn run(
 
     let user_id = command.user.id.get().to_string();
     let user_display_name = command.user.display_name();
+
     let user_prompt_record: Option<(String,)> =
         sqlx::query_as("SELECT prompt FROM UserSystemPrompts WHERE userId = ?")
             .bind(user_id)
@@ -36,25 +48,29 @@ pub async fn run(
             .await
             .ok();
 
-    let system_prompt = match user_prompt_record {
-        Some(row) => row.0,
-        None => config.ollama.system_prompt.clone(),
-    };
+    let mut system_prompt = config.ollama.system_prompt.clone();
+
+    if !use_default_prompt {
+        system_prompt = match user_prompt_record {
+            Some(row) => row.0,
+            None => config.ollama.system_prompt.clone(),
+        };
+    }
 
     let llm_response = client
         .agent(&config.ollama.models.instruct)
         .preamble(&system_prompt)
         .append_preamble("Make your response no longer than 1024 characters")
-        .append_preamble(&format!(
-            "The users name is {}",
-            &user_display_name
-        ))
+        .append_preamble(&format!("The users name is {}", &user_display_name))
         .build()
         .prompt(query)
         .await;
 
     if llm_response.is_err() {
-        return Some(CreateInteractionResponseFollowup::new().content(llm_response.err().unwrap().to_string()))
+        return Some(
+            CreateInteractionResponseFollowup::new()
+                .content(llm_response.err().unwrap().to_string()),
+        );
     }
 
     let response_string = match llm_response {
@@ -63,7 +79,11 @@ pub async fn run(
     };
 
     let embed = CreateEmbed::new()
-        .field(format!("{user_display_name} asked"), query.to_string(), false)
+        .field(
+            format!("{user_display_name} asked"),
+            query.to_string(),
+            false,
+        )
         .field("Response", response_string, false)
         .footer(CreateEmbedFooter::new("Powered by Maxine"));
 
@@ -81,11 +101,11 @@ pub fn register() -> CreateCommand {
             )
             .required(true),
         )
-        .add_option(CreateCommandOption::new(
-            serenity::all::CommandOptionType::Boolean,
-            "search_web",
-            "Search web to help assist with accurate results",
-        ))
+        // .add_option(CreateCommandOption::new(
+        //     serenity::all::CommandOptionType::Boolean,
+        //     "search_web",
+        //     "Search web to help assist with accurate results",
+        // ))
         .add_option(CreateCommandOption::new(
             serenity::all::CommandOptionType::Boolean,
             "use_default_prompt",

@@ -3,6 +3,14 @@ name = "maxine-rust"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+opt-level = 'z'     # Optimize for size
+lto = true          # Enable link-time optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations
+panic = 'abort'     # Abort on panic
+strip = true        # Strip symbols from binary*
+
+
 [dependencies]
 lazy_static = "1.5.0"
 rand = "0.9.0"
@@ -17,3 +25,4 @@ openssl = { version = "0.10", features = ["vendored"] }
 rig-core = "0.7.0"
 
 sqlx = { version = "0.8.3", features = ["runtime-tokio-rustls", "sqlite"] }
+ffmpeg-next = "7.1.0"
