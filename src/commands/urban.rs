@@ -35,9 +35,9 @@ pub async fn urban(
                 .title(format!("Urban Dictionary: {}", &entry.word))
                 .field("Definition", &entry.definition, false)
                 .footer(CreateEmbedFooter::new("Powered by Maxine"));
-    
+
             ctx.send(CreateReply::default().embed(embed)).await?;
-    
+
             return Ok(());
         }
     }

@@ -7,4 +7,4 @@ pub struct Data {
     pub config: config::Config,
     pub llm_client: Client,
     pub database: SqlitePool,
-} 
+}

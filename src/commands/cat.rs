@@ -1,7 +1,5 @@
 use poise::{serenity_prelude as serenity, CreateReply};
-use serenity::all::{
-    CreateEmbed, CreateEmbedFooter,
-};
+use serenity::all::{CreateEmbed, CreateEmbedFooter};
 
 use crate::structs::Data;
 
@@ -15,9 +13,7 @@ struct Cat {
 
 /// Get a random cat image.
 #[poise::command(slash_command, prefix_command)]
-pub async fn cat(
-    ctx: Context<'_>,
-) -> Result<(), Error> {
+pub async fn cat(ctx: Context<'_>) -> Result<(), Error> {
     let cat = reqwest::get("https://api.thecatapi.com/v1/images/search")
         .await?
         .json::<Vec<Cat>>()

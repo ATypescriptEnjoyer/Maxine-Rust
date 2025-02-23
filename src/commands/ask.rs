@@ -12,27 +12,30 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 pub async fn ask(
     ctx: Context<'_>,
     #[description = "Your query"] query: String,
-    #[description = "Search web to help assist with accurate results"] use_default_prompt: Option<bool>,
+    #[description = "Search web to help assist with accurate results"] use_default_prompt: Option<
+        bool,
+    >,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
     let author = ctx.author();
     let user_id = author.id.to_string();
     let user_display_name = author.display_name();
-
     let mut system_prompt = ctx.data().config.ollama.system_prompt.clone();
 
     if !use_default_prompt.unwrap_or(false) {
         let user_prompt_record: (String,) =
-        sqlx::query_as("SELECT prompt FROM UserSystemPrompts WHERE userId = ?")
-            .bind(user_id)
-            .fetch_one(&ctx.data().database)
-            .await?;
+            sqlx::query_as("SELECT prompt FROM UserSystemPrompts WHERE userId = ?")
+                .bind(user_id)
+                .fetch_one(&ctx.data().database)
+                .await?;
 
         system_prompt = user_prompt_record.0;
     }
 
-    let llm_response = &ctx.data().llm_client
+    let llm_response = &ctx
+        .data()
+        .llm_client
         .agent(&ctx.data().config.ollama.models.instruct)
         .preamble(&system_prompt)
         .append_preamble("Make your response no longer than 1024 characters")
@@ -43,7 +46,7 @@ pub async fn ask(
 
     let response_string = match llm_response {
         Ok(response) => response,
-        Err(err) => &err.to_string()
+        Err(err) => &err.to_string(),
     };
 
     let embed = CreateEmbed::new()

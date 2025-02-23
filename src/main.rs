@@ -72,8 +72,8 @@ async fn main() {
     println!("Starting Maxine");
 
     let config = config::Config::new("./data".to_string());
-    let token =  &config.bot.token.to_string();
-    let intents  =  GatewayIntents::all();
+    let token = &config.bot.token.to_string();
+    let intents = GatewayIntents::all();
 
     let llm_client =
         providers::openai::Client::from_url("ollama", &format!("{}/v1", &config.ollama.host));
@@ -107,19 +107,23 @@ async fn main() {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(structs::Data {  config: config.clone(), database, llm_client  })
+                Ok(structs::Data {
+                    config: config.clone(),
+                    database,
+                    llm_client,
+                })
             })
         })
         .build();
 
     println!("Framework Built");
 
-    let mut client = serenity::ClientBuilder::new(token,intents)
+    let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
         .event_handler(handler)
-        .await.unwrap();
+        .await
+        .unwrap();
 
     client.start().await.unwrap();
     print!("Maxine is Online");
-
 }
