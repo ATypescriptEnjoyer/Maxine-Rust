@@ -1,37 +1,27 @@
-use serenity::all::{
-    CreateCommandOption, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse,
-    CreateInteractionResponseMessage, ResolvedOption, ResolvedValue, User,
-};
-use serenity::builder::CreateCommand;
+use poise::{serenity_prelude as serenity, CreateReply};
 
-pub fn run(calling_user: &User, options: &[ResolvedOption]) -> Option<CreateInteractionResponse> {
-    let user = if let Some(ResolvedOption {
-        value: ResolvedValue::User(user, _),
-        ..
-    }) = options.iter().find(|opt| opt.name == "user")
-    {
-        user
-    } else {
-        &calling_user
-    };
+use crate::structs::Data;
+
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+
+/// Displays your or another user's Avatar.
+#[poise::command(slash_command, prefix_command)]
+pub async fn avatar(
+    ctx: Context<'_>,
+    #[description = "User to show Avatar for"] user: Option<serenity::User>,
+) -> Result<(), Error> {
+    let user = user.as_ref().unwrap_or_else(|| ctx.author());
 
     let user_name = user.display_name();
-    let avatar_url = user.avatar_url()?;
+    let avatar_url = user.avatar_url().expect("Can't retrieve user Avatar.");
 
-    let embed = CreateEmbed::new()
+    let embed = serenity::CreateEmbed::new()
         .title(format!("Avatar for {user_name}"))
         .image(avatar_url)
-        .footer(CreateEmbedFooter::new("Powered by Maxine"));
-    let data = CreateInteractionResponseMessage::new().embed(embed);
-    Some(CreateInteractionResponse::Message(data))
-}
+        .footer(serenity::CreateEmbedFooter::new("Powered by Maxine"));
 
-pub fn register() -> CreateCommand {
-    CreateCommand::new("avatar")
-        .description("Gets the avatar for a specific user")
-        .add_option(CreateCommandOption::new(
-            serenity::all::CommandOptionType::User,
-            "user",
-            "User to retrieve avatar for",
-        ))
+    ctx.send(CreateReply::default().embed(embed)).await?;
+
+    Ok(())
 }

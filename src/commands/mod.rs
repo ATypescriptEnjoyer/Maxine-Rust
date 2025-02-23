@@ -1,6 +1,17 @@
-pub mod ask;
-pub mod avatar;
-pub mod cat;
-pub mod dog;
-pub mod eightball;
-pub mod urban;
+mod ask;
+pub use ask::*;
+
+mod avatar;
+pub use avatar::*;
+
+mod cat;
+pub use cat::*;
+
+mod dog;
+pub use dog::*;
+
+mod eightball;
+pub use eightball::*;
+
+mod urban;
+pub use urban::*;

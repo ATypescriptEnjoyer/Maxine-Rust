@@ -1,92 +1,18 @@
+#[forbid(unsafe_code)]
 mod commands;
 mod config;
+mod structs;
 
 use rig::providers;
-use serenity::all::{ActivityData, CreateInteractionResponseFollowup, CreateMessage, Guild};
+use serenity::all::{ActivityData, CreateMessage, Guild};
 use serenity::async_trait;
-use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::model::application::{Command, Interaction};
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
-enum CommandValue {
-    InteractionResponse(Option<CreateInteractionResponse>),
-    InteractionResponseFollowup(Option<CreateInteractionResponseFollowup>),
-}
-
-struct Handler {
-    config: config::Config,
-    llm_client: providers::openai::Client,
-    database: sqlx::SqlitePool,
-}
+use poise::serenity_prelude as serenity;
 
 #[async_trait]
-impl EventHandler for Handler {
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Command(command) = interaction {
-            let command_name = command.data.name.as_str();
-            let command_caller = command.user.display_name();
-            println!("Received command interaction \"{command_name}\" from {command_caller}");
-
-            let builder: Option<CommandValue> = match command_name {
-                "ask" => Some(CommandValue::InteractionResponseFollowup(
-                    commands::ask::run(
-                        &command,
-                        &ctx,
-                        &self.config,
-                        &self.llm_client,
-                        &self.database,
-                    )
-                    .await,
-                )),
-                "avatar" => Some(CommandValue::InteractionResponse(commands::avatar::run(
-                    &command.user,
-                    &command.data.options(),
-                ))),
-                "cat" => Some(CommandValue::InteractionResponse(
-                    commands::cat::run().await,
-                )),
-                "dog" => Some(CommandValue::InteractionResponse(
-                    commands::dog::run().await,
-                )),
-                "urban" => Some(CommandValue::InteractionResponse(
-                    commands::urban::run(&command.data.options()).await,
-                )),
-                "8ball" => Some(CommandValue::InteractionResponse(commands::eightball::run(
-                    &command_caller,
-                    &command.data.options(),
-                ))),
-                _ => Some(CommandValue::InteractionResponse(Some(
-                    CreateInteractionResponse::Message(
-                        CreateInteractionResponseMessage::new().content("Command not implemented"),
-                    ),
-                ))),
-            };
-
-            match builder {
-                Some(CommandValue::InteractionResponse(response)) => {
-                    let builder_response = response.expect("Something went wrong, and 'response' was 'None'");
-                    if let Err(why) = command.create_response(&ctx.http, builder_response).await {
-                        println!("Cannot respond to slash command: {why}");
-                        let _ = command.create_response(&ctx.http, CreateInteractionResponse::Message(CreateInteractionResponseMessage::new().content(why.to_string()))).await;
-                    }
-                }
-                Some(CommandValue::InteractionResponseFollowup(response)) => {
-                    let builder_response = response.expect("Something went wrong, and the 'response' was 'None'");
-                    if let Err(why) = command.create_followup(&ctx.http, builder_response).await {
-                        println!("Cannot respond to slash command: {why}");
-                        let _ = command.create_followup(&ctx.http, CreateInteractionResponseFollowup::new().content(why.to_string())).await;
-                    }
-                }
-                None => {
-                    let err = "Something went wrong, and the command returned 'None'";
-                    println!("{err}");
-                    let _ = command.create_response(&ctx.http, CreateInteractionResponse::Message(CreateInteractionResponseMessage::new().content(err))).await;
-                }
-            }
-        }
-    }
-
+impl EventHandler for structs::Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         let guild_count = ready.guilds.len();
         println!("{}  is online in {} guild(s)", ready.user.name, guild_count);
@@ -104,19 +30,6 @@ impl EventHandler for Handler {
         for guild in ctx.cache.guilds() {
             let _ = guild.edit_nickname(&ctx.http, Some(nick)).await;
         }
-
-        let _ = Command::set_global_commands(
-            &ctx.http,
-            vec![
-                commands::avatar::register(),
-                commands::cat::register(),
-                commands::dog::register(),
-                commands::eightball::register(),
-                commands::urban::register(),
-                commands::ask::register(),
-            ],
-        )
-        .await;
     }
 
     async fn guild_create(&self, ctx: Context, guild: Guild, is_new: std::option::Option<bool>) {
@@ -156,9 +69,15 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+    println!("Starting Maxine");
+
     let config = config::Config::new("./data".to_string());
+    let token =  &config.bot.token.to_string();
+    let intents  =  GatewayIntents::all();
+
     let llm_client =
         providers::openai::Client::from_url("ollama", &format!("{}/v1", &config.ollama.host));
+
     let database = sqlx::sqlite::SqlitePoolOptions::new()
         .max_connections(5)
         .connect_with(
@@ -169,19 +88,38 @@ async fn main() {
         .await
         .expect("Couldn't connect to database");
 
-    let handler = Handler {
+    let handler = structs::Handler {
         config: config.clone(),
-        database,
-        llm_client,
     };
 
-    // Build our client.
-    let mut client: Client = Client::builder(&config.bot.token.clone(), GatewayIntents::all())
-        .event_handler(handler)
-        .await
-        .expect("Error creating client");
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![
+                commands::avatar(),
+                commands::cat(),
+                commands::dog(),
+                commands::eightball(),
+                commands::urban(),
+                commands::ask(),
+            ],
+            ..Default::default()
+        })
+        .setup(|ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(structs::Data {  config: config.clone(), database, llm_client  })
+            })
+        })
+        .build();
 
-    if let Err(why) = client.start().await {
-        println!("Client error: {why:?}");
-    }
+    println!("Framework Built");
+
+    let mut client = serenity::ClientBuilder::new(token,intents)
+        .framework(framework)
+        .event_handler(handler)
+        .await.unwrap();
+
+    client.start().await.unwrap();
+    print!("Maxine is Online");
+
 }

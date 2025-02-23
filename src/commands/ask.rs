@@ -1,81 +1,49 @@
+use poise::CreateReply;
 use rig::completion::Prompt;
-use rig::providers;
-use serenity::all::{
-    CommandInteraction, Context, CreateCommandOption, CreateEmbed, CreateEmbedFooter,
-    CreateInteractionResponseFollowup, ResolvedOption, ResolvedValue,
-};
-use serenity::builder::CreateCommand;
+use serenity::all::CreateEmbed;
 
-use crate::config;
+use crate::structs::Data;
 
-pub async fn run(
-    command: &CommandInteraction,
-    ctx: &Context,
-    config: &config::Config,
-    client: &providers::openai::Client,
-    database: &sqlx::SqlitePool,
-) -> Option<CreateInteractionResponseFollowup> {
-    command.defer(&ctx.http).await.ok()?;
-    let options: &[ResolvedOption<'_>] = &command.data.options();
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 
-    let use_default_prompt = if let Some(ResolvedOption {
-        value: ResolvedValue::Boolean(use_default_prompt),
-        ..
-    }) = options.iter().find(|opt| opt.name == "use_default_prompt")
-    {
-        use_default_prompt
-    } else {
-        return false;
-    };
+/// Ask me anything!
+#[poise::command(slash_command, prefix_command)]
+pub async fn ask(
+    ctx: Context<'_>,
+    #[description = "Your query"] query: String,
+    #[description = "Search web to help assist with accurate results"] use_default_prompt: Option<bool>,
+) -> Result<(), Error> {
+    ctx.defer().await?;
 
-    let query = if let Some(ResolvedOption {
-        value: ResolvedValue::String(query),
-        ..
-    }) = options.iter().find(|opt| opt.name == "query")
-    {
-        query
-    } else {
-        return None;
-    };
+    let author = ctx.author();
+    let user_id = author.id.to_string();
+    let user_display_name = author.display_name();
 
-    let user_id = command.user.id.get().to_string();
-    let user_display_name = command.user.display_name();
+    let mut system_prompt = ctx.data().config.ollama.system_prompt.clone();
 
-    let user_prompt_record: Option<(String,)> =
+    if !use_default_prompt.unwrap_or(false) {
+        let user_prompt_record: (String,) =
         sqlx::query_as("SELECT prompt FROM UserSystemPrompts WHERE userId = ?")
             .bind(user_id)
-            .fetch_one(database)
-            .await
-            .ok();
+            .fetch_one(&ctx.data().database)
+            .await?;
 
-    let mut system_prompt = config.ollama.system_prompt.clone();
-
-    if !use_default_prompt {
-        system_prompt = match user_prompt_record {
-            Some(row) => row.0,
-            None => config.ollama.system_prompt.clone(),
-        };
+        system_prompt = user_prompt_record.0;
     }
 
-    let llm_response = client
-        .agent(&config.ollama.models.instruct)
+    let llm_response = &ctx.data().llm_client
+        .agent(&ctx.data().config.ollama.models.instruct)
         .preamble(&system_prompt)
         .append_preamble("Make your response no longer than 1024 characters")
         .append_preamble(&format!("The users name is {}", &user_display_name))
         .build()
-        .prompt(query)
+        .prompt(&query)
         .await;
-
-    if llm_response.is_err() {
-        return Some(
-            CreateInteractionResponseFollowup::new()
-                .content(llm_response.err().unwrap().to_string()),
-        );
-    }
 
     let response_string = match llm_response {
         Ok(response) => response,
-        Err(_) => "Maxine failed to respond, please try again.".to_string(),
+        Err(err) => &err.to_string()
     };
 
     let embed = CreateEmbed::new()
@@ -85,30 +53,9 @@ pub async fn run(
             false,
         )
         .field("Response", response_string, false)
-        .footer(CreateEmbedFooter::new("Powered by Maxine"));
+        .footer(serenity::all::CreateEmbedFooter::new("Powered by Maxine"));
 
-    Some(CreateInteractionResponseFollowup::new().embed(embed))
-}
+    ctx.send(CreateReply::default().embed(embed)).await?;
 
-pub fn register() -> CreateCommand {
-    CreateCommand::new("ask")
-        .description("Ask a question!")
-        .add_option(
-            CreateCommandOption::new(
-                serenity::all::CommandOptionType::String,
-                "query",
-                "Your query",
-            )
-            .required(true),
-        )
-        // .add_option(CreateCommandOption::new(
-        //     serenity::all::CommandOptionType::Boolean,
-        //     "search_web",
-        //     "Search web to help assist with accurate results",
-        // ))
-        .add_option(CreateCommandOption::new(
-            serenity::all::CommandOptionType::Boolean,
-            "use_default_prompt",
-            "Search web to help assist with accurate results",
-        ))
+    Ok(())
 }

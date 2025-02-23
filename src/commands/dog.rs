@@ -1,22 +1,39 @@
-use serenity::all::{CreateEmbed, CreateEmbedFooter, CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::builder::CreateCommand;
+use poise::{serenity_prelude as serenity, CreateReply};
+use serenity::all::{
+    CreateEmbed, CreateEmbedFooter,
+};
+
+use crate::structs::Data;
+
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[derive(serde::Deserialize)]
 struct Dog {
     message: String,
 }
 
-pub async fn run() -> Option<CreateInteractionResponse> {
+/// Get a random dog image.
+#[poise::command(slash_command, prefix_command)]
+pub async fn dog(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
     let dog = reqwest::get("https://dog.ceo/api/breeds/image/random")
-        .await.ok()?
+        .await?
         .json::<Dog>()
-        .await.ok()?;
+        .await.ok();
 
-    let embed = CreateEmbed::new().title("Here's your dog!").image(dog.message).footer(CreateEmbedFooter::new("Powered by Maxine"));
-    let data = CreateInteractionResponseMessage::new().embed(embed);
-    Some(CreateInteractionResponse::Message(data))
-}
+    if let Some(dog) = dog {
+        let embed = CreateEmbed::new()
+            .title("Here's your dog!")
+            .image(&dog.message)
+            .footer(CreateEmbedFooter::new("Powered by Maxine"));
 
-pub fn register() -> CreateCommand {
-    CreateCommand::new("dog").description("Get a random dog image")
+        ctx.send(CreateReply::default().embed(embed)).await?;
+
+        return Ok(());
+    }
+
+    ctx.reply("Unable to fetch dog photo :(").await?;
+    Ok(())
 }

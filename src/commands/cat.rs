@@ -1,24 +1,39 @@
-use serenity::all::{CreateEmbed, CreateEmbedFooter, CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::builder::CreateCommand;
+use poise::{serenity_prelude as serenity, CreateReply};
+use serenity::all::{
+    CreateEmbed, CreateEmbedFooter,
+};
+
+use crate::structs::Data;
+
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[derive(serde::Deserialize)]
 struct Cat {
     url: String,
 }
 
-pub async fn run() -> Option<CreateInteractionResponse> {
+/// Get a random cat image.
+#[poise::command(slash_command, prefix_command)]
+pub async fn cat(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
     let cat = reqwest::get("https://api.thecatapi.com/v1/images/search")
-        .await.ok()?
+        .await?
         .json::<Vec<Cat>>()
-        .await.ok()?
-        .into_iter()
-        .next()?;
+        .await?;
 
-    let embed = CreateEmbed::new().title("Here's your cat!").image(cat.url).footer(CreateEmbedFooter::new("Powered by Maxine"));
-    let data = CreateInteractionResponseMessage::new().embed(embed);
-    Some(CreateInteractionResponse::Message(data))
-}
+    if cat.len() > 0 {
+        let embed = CreateEmbed::new()
+            .title("Here's your cat!")
+            .image(&cat[0].url)
+            .footer(CreateEmbedFooter::new("Powered by Maxine"));
 
-pub fn register() -> CreateCommand {
-    CreateCommand::new("cat").description("Get a random cat image")
+        ctx.send(CreateReply::default().embed(embed)).await?;
+
+        return Ok(());
+    }
+
+    ctx.reply("Unable to fetch cat photo :(").await?;
+    Ok(())
 }
