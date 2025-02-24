@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod structs;
 
+use ::serenity::all::{Message, Reaction, UserId};
 use rig::providers;
 use serenity::all::{ActivityData, CreateMessage, Guild};
 use serenity::async_trait;
@@ -10,6 +11,8 @@ use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
 use poise::serenity_prelude as serenity;
+
+use regex::Regex;
 
 #[async_trait]
 impl EventHandler for structs::Handler {
@@ -63,6 +66,33 @@ impl EventHandler for structs::Handler {
             );
 
             ctx.set_activity(Some(ActivityData::custom(status)));
+        }
+    }
+
+    async fn message(&self, ctx: Context, message: Message) {
+        if message.author.bot || self.config.twitter_embed_url.is_empty() {
+            return;
+        }
+
+        let re = Regex::new(r#"(?i)\bhttps?://(?:x\.com|twitter\.com)(\S*)"#)
+            .expect("Invalid Regex Provided.");
+        let mut urls = vec![];
+
+        for (_, [path]) in re.captures_iter(&message.content).map(|c| c.extract()) {
+            urls.push(format!("{0}{1}", self.config.twitter_embed_url, path));
+        }
+
+        if urls.is_empty() {
+            return;
+        }
+
+        let _ = message.reply(&ctx.http, urls.join("; ")).await;
+    }
+
+    async fn reaction_add(&self, ctx: Context, add_reaction: Reaction) {
+        if add_reaction.emoji.unicode_eq("🗑️") &&
+            add_reaction.message_author_id.unwrap_or(UserId::default()) == ctx.cache.current_user().id {
+                let _ = add_reaction.message(&ctx.http).await.expect("Can't get message").delete(&ctx.http).await;
         }
     }
 }
