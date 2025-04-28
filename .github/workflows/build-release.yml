@@ -29,6 +29,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.38"
+
       - name: Compile and release
         uses: rust-build/rust-build.action@v1.4.5
         env:
