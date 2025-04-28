@@ -25,6 +25,5 @@ openssl = { version = "0.10", features = ["vendored"] }
 rig-core = "0.7.0"
 
 sqlx = { version = "0.8.3", features = ["runtime-tokio-rustls", "sqlite"] }
-ffmpeg-next = "7.1.0"
 poise = "0.6.1"
 regex = "1.11.1"
