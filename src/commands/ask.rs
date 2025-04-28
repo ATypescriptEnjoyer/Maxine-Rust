@@ -12,7 +12,7 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 pub async fn ask(
     ctx: Context<'_>,
     #[description = "Your query"] query: String,
-    #[description = "Search web to help assist with accurate results"] use_default_prompt: Option<
+    #[description = "Use the default prompt rather than your custom prompt"] use_default_prompt: Option<
         bool,
     >,
 ) -> Result<(), Error> {
