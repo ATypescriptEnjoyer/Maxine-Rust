@@ -20,7 +20,10 @@ mod urban;
 pub use urban::*;
 
 mod time;
-pub use time::*;  
+pub use time::*;
 
 mod translate;
 pub use translate::*;
+
+mod tldrify;
+pub use tldrify::*;

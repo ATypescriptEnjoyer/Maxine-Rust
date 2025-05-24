@@ -19,7 +19,6 @@ pub const DATA_DIR: &str = if cfg!(debug_assertions) {
     "/data"
 };
 
-
 #[async_trait]
 impl EventHandler for structs::Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
@@ -96,9 +95,16 @@ impl EventHandler for structs::Handler {
     }
 
     async fn reaction_add(&self, ctx: Context, add_reaction: Reaction) {
-        if add_reaction.emoji.unicode_eq("🗑️") &&
-            add_reaction.message_author_id.unwrap_or(UserId::default()) == ctx.cache.current_user().id {
-                let _ = add_reaction.message(&ctx.http).await.expect("Can't get message").delete(&ctx.http).await;
+        if add_reaction.emoji.unicode_eq("🗑️")
+            && add_reaction.message_author_id.unwrap_or(UserId::default())
+                == ctx.cache.current_user().id
+        {
+            let _ = add_reaction
+                .message(&ctx.http)
+                .await
+                .expect("Can't get message")
+                .delete(&ctx.http)
+                .await;
         }
     }
 }
@@ -140,6 +146,7 @@ async fn main() {
                 commands::save(),
                 commands::time(),
                 commands::translate(),
+                commands::tldrify(),
             ],
             ..Default::default()
         })
