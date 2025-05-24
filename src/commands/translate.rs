@@ -26,8 +26,7 @@ pub async fn translate(
 
     let system_prompt = 
       "You are excellent at detecting languages and translating text to English. The origin language of the text provided for you to translate will never be English. 
-      You MUST Respond EXACTLY in the following JSON format, do not forget the curly braces:
-
+      You MUST Respond EXACTLY in the following JSON format. Your response will be parsed by a JSON parser, so do not add anything else.
       {
         \"input_language\": \"detected input language\",
         \"translation\": \"the english translation\"
@@ -44,7 +43,10 @@ pub async fn translate(
         .prompt(&user_prompt)
         .await?;
 
-    let translation: TranslationResponse = serde_json::from_str(llm_response)?;
+    // Fucking LLMs
+    let parsed_response = llm_response.replace("```json", "").replace("```", "").trim().to_string();
+
+    let translation: TranslationResponse = serde_json::from_str(&parsed_response)?;
 
     let embed = CreateEmbed::new()
         .field(
