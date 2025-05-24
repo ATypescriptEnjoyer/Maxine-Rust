@@ -131,6 +131,8 @@ async fn main() {
                 commands::eightball(),
                 commands::urban(),
                 commands::ask(),
+                commands::save(),
+                commands::time(),
             ],
             ..Default::default()
         })
