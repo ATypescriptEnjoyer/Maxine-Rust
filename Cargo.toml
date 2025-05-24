@@ -29,3 +29,4 @@ poise = "0.6.1"
 regex = "1.11.1"
 scraper = { version = "0.23.1", features = ["atomic"] }
 tempfile = "3.10.1"
+colors-transform = "0.2.11"

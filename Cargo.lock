@@ -229,6 +229,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "colors-transform"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9226dbc05df4fb986f48d730b001532580883c4c06c5d1c213f4b34c1c157178"
+
+[[package]]
 name = "command_attr"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1422,6 +1428,7 @@ dependencies = [
 name = "maxine-rust"
 version = "0.1.0"
 dependencies = [
+ "colors-transform",
  "lazy_static",
  "openssl",
  "poise",

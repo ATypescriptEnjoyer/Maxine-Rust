@@ -144,6 +144,7 @@ async fn main() {
                 commands::urban(),
                 commands::ask(),
                 commands::save(),
+                commands::setcolour(),
                 commands::time(),
                 commands::translate(),
                 commands::tldrify(),

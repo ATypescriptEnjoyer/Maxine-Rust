@@ -19,6 +19,9 @@ pub use prompt::*;
 mod save;
 pub use save::*;
 
+mod setcolour;
+pub use setcolour::*;
+
 mod urban;
 pub use urban::*;
 
