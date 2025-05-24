@@ -147,6 +147,7 @@ async fn main() {
                 commands::time(),
                 commands::translate(),
                 commands::tldrify(),
+                commands::prompt(),
             ],
             ..Default::default()
         })
