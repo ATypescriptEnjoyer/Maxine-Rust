@@ -101,7 +101,7 @@ impl EventHandler for structs::Handler {
 async fn main() {
     println!("Starting Maxine");
 
-    let config = config::Config::new("./data".to_string());
+    let config = config::Config::new("/data".to_string());
     let token = &config.bot.token.to_string();
     let intents = GatewayIntents::all();
 
@@ -112,7 +112,7 @@ async fn main() {
         .max_connections(5)
         .connect_with(
             sqlx::sqlite::SqliteConnectOptions::new()
-                .filename("./data/database.sqlite")
+                .filename("/data/database.sqlite")
                 .create_if_missing(true),
         )
         .await
