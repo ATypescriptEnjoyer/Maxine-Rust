@@ -11,8 +11,14 @@ use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
 use poise::serenity_prelude as serenity;
-
 use regex::Regex;
+
+pub const DATA_DIR: &str = if cfg!(debug_assertions) {
+    "./data"
+} else {
+    "/data"
+};
+
 
 #[async_trait]
 impl EventHandler for structs::Handler {
@@ -101,7 +107,7 @@ impl EventHandler for structs::Handler {
 async fn main() {
     println!("Starting Maxine");
 
-    let config = config::Config::new("/data".to_string());
+    let config = config::Config::new(DATA_DIR.to_string());
     let token = &config.bot.token.to_string();
     let intents = GatewayIntents::all();
 
@@ -112,7 +118,7 @@ async fn main() {
         .max_connections(5)
         .connect_with(
             sqlx::sqlite::SqliteConnectOptions::new()
-                .filename("/data/database.sqlite")
+                .filename(format!("{}/database.sqlite", DATA_DIR))
                 .create_if_missing(true),
         )
         .await
@@ -133,6 +139,7 @@ async fn main() {
                 commands::ask(),
                 commands::save(),
                 commands::time(),
+                commands::translate(),
             ],
             ..Default::default()
         })
