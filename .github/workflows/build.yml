@@ -33,7 +33,7 @@ jobs:
       - name: Install rust toolchain
         run: curl https://sh.rustup.rs -sSf | sh -s -- -y
       - name: Run SQ report
-        run: cargo clippy --message-format=json &> report.json
+        run: . "$HOME/.cargo/env" && cargo clippy --message-format=json &> report.json
       - name: SonarQube Scan
         uses: kitabisa/sonarqube-action@v1.2.1
         with:
