@@ -3,7 +3,7 @@ mod commands;
 mod config;
 mod structs;
 
-use ::serenity::all::{Message, Reaction, UserId};
+use ::serenity::all::{ChannelType, CreateChannel, Message, Reaction, UserId, VoiceState};
 use rig::providers;
 use serenity::all::{ActivityData, CreateMessage, Guild};
 use serenity::async_trait;
@@ -71,6 +71,50 @@ impl EventHandler for structs::Handler {
             );
 
             ctx.set_activity(Some(ActivityData::custom(status)));
+        }
+    }
+
+    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, new: VoiceState) {
+        if new.channel_id.is_some() {
+            let guild_id = new.guild_id.unwrap();
+            let guild = ctx.cache.guild(guild_id).unwrap().clone();
+            let channel_id = new.channel_id.unwrap();
+            let channel = guild.channels.get(&channel_id).unwrap().clone();
+            let channel_name = &channel.name;
+
+            let user = new.member.unwrap_or_default();
+
+            if channel_name.to_lowercase() == "temp channel creator" {
+                let new_channel = guild
+                    .create_channel(
+                        &ctx.http,
+                        CreateChannel::new(format!("{}'s Channel", user.user.display_name()))
+                            .kind(ChannelType::Voice)
+                            .category(channel.parent_id.unwrap_or_default()),
+                    )
+                    .await;
+                if new_channel.is_ok() {
+                    let _ = user
+                        .move_to_voice_channel(&ctx.http, new_channel.unwrap().id)
+                        .await;
+                }
+            }
+        }
+
+        if old.is_some() {
+            let old_state = old.unwrap();
+            let guild_id = old_state.guild_id.unwrap();
+            let guild = ctx.cache.guild(guild_id).unwrap().clone();
+            let channel_id = old_state.channel_id.unwrap();
+            let channel = guild.channels.get(&channel_id).unwrap().clone();
+            let channel_name = &channel.name;
+
+            if channel_name.to_lowercase().contains("'s channel") {
+                let members = channel.members(&ctx.cache).unwrap();
+                if members.is_empty() {
+                    let _ = channel.delete(&ctx.http).await;
+                }
+            }
         }
     }
 
