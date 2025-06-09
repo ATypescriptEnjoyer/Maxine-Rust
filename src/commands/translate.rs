@@ -1,7 +1,6 @@
 use poise::CreateReply;
 use rig::completion::Prompt;
 use serenity::all::CreateEmbed;
-use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::structs::Data;
 

@@ -3,7 +3,7 @@ mod commands;
 mod config;
 mod structs;
 
-use ::serenity::all::{ChannelType, CreateChannel, Message, Reaction, UserId, VoiceState};
+use ::serenity::all::{ChannelType, CreateChannel, Message, Reaction, VoiceState};
 use rig::providers;
 use serenity::all::{ActivityData, CreateMessage, Guild};
 use serenity::async_trait;
@@ -48,12 +48,14 @@ impl EventHandler for structs::Handler {
         println!(
             "Joined guild: {}. We're now in {} guild(s)!",
             guild.name,
-            ctx.cache.guilds().len().to_string()
+            ctx.cache.guilds().len()
         );
 
         let config = &self.config;
 
-        let _ = guild.edit_nickname(&ctx.http, Some(&config.bot.nickname));
+        let _ = guild
+            .edit_nickname(&ctx.http, Some(&config.bot.nickname))
+            .await;
 
         let general_channel = guild.channels.iter().find(|(_, channel)| {
             channel.is_text_based() && channel.name.to_lowercase() == "general"
@@ -140,8 +142,7 @@ impl EventHandler for structs::Handler {
 
     async fn reaction_add(&self, ctx: Context, add_reaction: Reaction) {
         if add_reaction.emoji.unicode_eq("🗑️")
-            && add_reaction.message_author_id.unwrap_or(UserId::default())
-                == ctx.cache.current_user().id
+            && add_reaction.message_author_id.unwrap_or_default() == ctx.cache.current_user().id
         {
             let _ = add_reaction
                 .message(&ctx.http)

@@ -45,5 +45,5 @@ pub async fn urban(
     ctx.send(CreateReply::default().content("No definition could be found."))
         .await?;
 
-    return Ok(());
+    Ok(())
 }

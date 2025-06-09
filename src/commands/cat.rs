@@ -19,7 +19,7 @@ pub async fn cat(ctx: Context<'_>) -> Result<(), Error> {
         .json::<Vec<Cat>>()
         .await?;
 
-    if cat.len() > 0 {
+    if !cat.is_empty() {
         let embed = CreateEmbed::new()
             .title("Here's your cat!")
             .image(&cat[0].url)
