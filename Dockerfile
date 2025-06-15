@@ -24,13 +24,15 @@ RUN cargo build --release
 FROM debian:bullseye-slim
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    ffmpeg \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip3 install yt-dlp
+RUN apt update && apt install python3 wget xz-utils -y && apt clean && \
+    wget https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp -P /usr/bin/ && \
+    chmod +x /usr/bin/yt-dlp && \
+    wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz && \
+    tar -xvf ffmpeg-master-latest-linux64-gpl.tar.xz  && \
+    mv ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/bin && \
+    chmod +x /usr/bin/ffmpeg && \
+    rm -rf ffmpeg-master-latest-linux64-gpl.tar.xz && \
+    rm -rf ffmpeg-master-latest-linux64-gpl
 
 # Copy the build artifact from the builder stage
 COPY --from=builder /usr/src/app/target/release/maxine-rust /usr/local/bin/maxine-rust
