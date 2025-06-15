@@ -8,6 +8,9 @@ use crate::structs::Data;
 
 const IGNORE_USER_AGENT_HOSTS: [&str; 1] = ["reddit.com"];
 
+const BASE_ARGS: &str = "-c:v h264_nvenc -c:a aac";
+const GIF_ARGS: &str = "-vf fps=24,scale=320:-1:flags=lanczos -c:v gif";
+
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
@@ -135,6 +138,7 @@ async fn convert_file(
     let output_path = temp_file.path().with_extension(format);
 
     let mut cmd = Command::new("ffmpeg");
+    cmd.arg("-hwaccel").arg("cuda").arg("-v").arg("error");
 
     // Add input file
     cmd.arg("-i").arg(input_path.to_str().unwrap());
@@ -144,13 +148,12 @@ async fn convert_file(
         cmd.args(args.split_whitespace());
     }
 
+    let args = if format == "gif" { GIF_ARGS } else { BASE_ARGS };
+
+    cmd.args(args.split_whitespace());
+
     // Add output options
-    cmd.arg("-c:v")
-        .arg(if format == "gif" { "gif" } else { "libx264" })
-        .arg("-preset")
-        .arg("medium")
-        .arg("-y") // Overwrite output file if it exists
-        .arg(output_path.to_str().unwrap());
+    cmd.arg(output_path.to_str().unwrap());
 
     let output = cmd.output()?;
 
