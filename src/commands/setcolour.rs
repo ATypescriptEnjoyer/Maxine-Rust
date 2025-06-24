@@ -37,7 +37,9 @@ pub async fn setcolour(
         .prompt(&format!("Convert this color to a hex value: {}", colour_code))
         .await?;
 
-    let rgb = Rgb::from_hex_str(llm_response.trim()).unwrap();
+    let cleaned_response = llm_response.split("</think>").last().unwrap().trim();
+
+    let rgb = Rgb::from_hex_str(cleaned_response).unwrap();
     let colour = Colour::from_rgb(
         rgb.get_red() as u8,
         rgb.get_green() as u8,

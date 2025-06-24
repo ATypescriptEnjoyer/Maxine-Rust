@@ -12,9 +12,8 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 pub async fn ask(
     ctx: Context<'_>,
     #[description = "Your query"] query: String,
-    #[description = "Use the default prompt rather than your custom prompt"] use_default_prompt: Option<
-        bool,
-    >,
+    #[description = "Use the default prompt rather than your custom prompt"]
+    use_default_prompt: Option<bool>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
@@ -49,13 +48,15 @@ pub async fn ask(
         Err(err) => &err.to_string(),
     };
 
+    let cleaned_response = response_string.split("</think>").last().unwrap().trim();
+
     let embed = CreateEmbed::new()
         .field(
             format!("{user_display_name} asked"),
             query.to_string(),
             false,
         )
-        .field("Response", response_string, false)
+        .field("Response", cleaned_response, false)
         .footer(serenity::all::CreateEmbedFooter::new("Powered by Maxine"));
 
     ctx.send(CreateReply::default().embed(embed)).await?;

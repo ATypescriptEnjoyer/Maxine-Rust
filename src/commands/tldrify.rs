@@ -29,10 +29,11 @@ pub async fn tldrify(
         .prompt(&user_prompt)
         .await?;
 
+    let cleaned_response = llm_response.split("</think>").last().unwrap().trim();
 
     let embed = CreateEmbed::new()
         .title("TLDR Summary")
-        .field("Summary", llm_response, false)
+        .field("Summary", cleaned_response, false)
         .footer(serenity::all::CreateEmbedFooter::new("Powered by Maxine"));
 
     ctx.send(CreateReply::default().embed(embed)).await?;

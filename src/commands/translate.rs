@@ -42,8 +42,10 @@ pub async fn translate(
         .prompt(&user_prompt)
         .await?;
 
+    let cleaned_response = llm_response.split("</think>").last().unwrap().trim();
+
     // Fucking LLMs
-    let parsed_response = llm_response.replace("```json", "").replace("```", "").trim().to_string();
+    let parsed_response = cleaned_response.replace("```json", "").replace("```", "").trim().to_string();
 
     let translation: TranslationResponse = serde_json::from_str(&parsed_response)?;
 
