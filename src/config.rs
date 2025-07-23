@@ -23,14 +23,6 @@ pub struct Bot {
 pub struct Ollama {
     pub host: String,
     pub system_prompt: String,
-    pub models: Models,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Models {
-    pub instruct: String,
-    pub tools: String,
 }
 
 impl Config {

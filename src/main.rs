@@ -186,6 +186,7 @@ async fn main() {
                 commands::cat(),
                 commands::dog(),
                 commands::eightball(),
+                commands::help(),
                 commands::urban(),
                 commands::ask(),
                 commands::save(),

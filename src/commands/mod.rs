@@ -13,6 +13,9 @@ pub use dog::*;
 mod eightball;
 pub use eightball::*;
 
+mod help;
+pub use help::*;
+
 mod prompt;
 pub use prompt::*;
 
