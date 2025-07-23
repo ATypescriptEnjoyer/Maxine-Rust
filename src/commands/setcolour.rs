@@ -31,7 +31,7 @@ pub async fn setcolour(
     let llm_response = &ctx
         .data()
         .llm_client
-        .agent(&ctx.data().config.ollama.models.tools)
+        .agent("gemma3:4b")
         .append_preamble("You are a helpful assistant that converts color names to hex values. Respond with ONLY the hex value, nothing else.")
         .build()
         .prompt(&format!("Convert this color to a hex value: {}", colour_code))

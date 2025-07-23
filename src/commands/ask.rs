@@ -35,7 +35,7 @@ pub async fn ask(
     let llm_response = &ctx
         .data()
         .llm_client
-        .agent(&ctx.data().config.ollama.models.instruct)
+        .agent("gemma3:4b")
         .preamble(&system_prompt)
         .append_preamble("Make your response no longer than 1024 characters")
         .append_preamble(&format!("The users name is {}", &user_display_name))

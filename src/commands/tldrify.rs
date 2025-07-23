@@ -23,7 +23,7 @@ pub async fn tldrify(
     let llm_response = &ctx
         .data()
         .llm_client
-        .agent(&ctx.data().config.ollama.models.tools)
+        .agent("gemma3:4b")
         .append_preamble(system_prompt)
         .build()
         .prompt(&user_prompt)
