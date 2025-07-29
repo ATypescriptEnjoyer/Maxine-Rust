@@ -2,7 +2,7 @@ use poise::CreateReply;
 use rig::completion::Prompt;
 use serenity::all::CreateEmbed;
 
-use crate::structs::Data;
+use crate::{structs::Data, util::search};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -32,6 +32,13 @@ pub async fn ask(
         system_prompt = user_prompt_record.0;
     }
 
+    let search_results = search(&query, &ctx.data().config).await;
+    let compiled_search_results = search_results
+        .iter()
+        .map(|result| format!("Title = {}, Content = {}", result.title, result.content))
+        .collect::<Vec<String>>()
+        .join("\n\n");
+
     let llm_response = &ctx
         .data()
         .llm_client
@@ -39,6 +46,10 @@ pub async fn ask(
         .preamble(&system_prompt)
         .append_preamble("Make your response no longer than 1024 characters")
         .append_preamble(&format!("The users name is {}", &user_display_name))
+        .append_preamble(&format!(
+            "Here are the results of a web search: {}",
+            &compiled_search_results
+        ))
         .build()
         .prompt(&query)
         .await;

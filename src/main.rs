@@ -2,6 +2,7 @@
 mod commands;
 mod config;
 mod structs;
+mod util;
 
 use ::serenity::all::{ChannelType, CreateChannel, Message, Reaction, VoiceState};
 use rig::providers;
