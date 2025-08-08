@@ -311,4 +311,5 @@ If you encounter any issues or have questions:
 ---
 
 **Made with ❤️ in Rust** 
+
 **TY to cursor for generating this README.MD :)**
